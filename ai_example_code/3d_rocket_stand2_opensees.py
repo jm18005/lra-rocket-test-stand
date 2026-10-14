@@ -1,0 +1,423 @@
+import json
+import math
+from pathlib import Path
+
+import openseespy.opensees as ops
+
+
+DED_DATA = json.loads('{"version": "2.0", "name": "3d_rocket_stand", "timestamp": "2026-10-07T05:49:39.268Z", "snapshot": {"name": "3d_rocket_stand", "nodes": [[1, {"id": 1, "x": 0, "y": 0, "z": 6.096}], [2, {"id": 2, "x": 0.6096, "y": 0, "z": 0}], [3, {"id": 3, "x": 0, "y": 0, "z": 0}], [4, {"id": 4, "x": 0.6096, "y": 0, "z": 6.096}], [8, {"id": 8, "x": 0.3048, "y": 0, "z": 0}], [9, {"id": 9, "x": 0.3048, "y": 0, "z": 6.096}], [12, {"id": 12, "x": 0.305, "y": 0, "z": 5}], [13, {"id": 13, "x": 0, "y": 0, "z": 0.5}], [14, {"id": 14, "x": 0.3048, "y": 0, "z": 0.5}], [15, {"id": 15, "x": 0.6096, "y": 0, "z": 0.5}], [16, {"id": 16, "x": 0, "y": -0.2, "z": 0.5}], [17, {"id": 17, "x": 0, "y": 0.2, "z": 0.5}], [18, {"id": 18, "x": 0.3048, "y": -0.2, "z": 0.5}], [19, {"id": 19, "x": 0.3048, "y": 0.2, "z": 0.5}]], "materials": [[1, {"id": 1, "name": "6063-T6", "e": 70000, "nu": 0.3, "rho": 27, "fy": 170, "gradeId": "alu-6063-t6"}], [4, {"id": 4, "name": "Fiberglass", "e": 20000, "nu": 0.3, "rho": 17.5, "fy": 200}], [5, {"id": 5, "name": "Fin Fiberglass", "e": 200000, "nu": 0.3, "rho": 17.5, "fy": 200}], [6, {"id": 6, "name": "8020net", "e": 68947.5729, "nu": 0.3, "rho": 26.46511571934448, "fy": 172.36893225}]], "sections": [[2, {"id": 2, "name": "Body Tube", "a": 0.0010475788137226383, "iz": 3.126511201209944e-06, "iy": 3.1265112012099675e-06, "j": 6.253022402419911e-06, "b": 0.156718, "h": 0.156718, "shape": "CHS", "t": 0.002159}], [3, {"id": 3, "name": "2020", "a": 0.0001591, "iz": 6.826e-09, "iy": 6.826e-09}], [5, {"id": 5, "name": "Lower FIn", "a": 0.002258, "iz": 2.379e-05, "iy": 7.59e-09, "j": 3e-08}], [6, {"id": 6, "name": "1004-S", "a": 0.00031225744, "iz": 2.343382926128e-08, "iy": 1.9438007575519998e-08, "j": 2.14359184184e-08}], [7, {"id": 7, "name": "1010-Black", "a": 0.0002806445999999, "iz": 1.839742901152e-08, "iy": 1.839742901152e-08, "j": 1.839742901152e-08}], [8, {"id": 8, "name": "1020", "a": 0.00050774092, "iz": 1.2811603279967998e-07, "iy": 3.467207775247999e-08, "j": 8.139405527608e-08}], [9, {"id": 9, "name": "1020-Black", "a": 0.00050774092, "iz": 1.2811603279967998e-07, "iy": 3.467207775247999e-08, "j": 8.139405527608e-08}], [10, {"id": 10, "name": "1020-S", "a": 0.00050709576, "iz": 1.2836577165504e-07, "iy": 3.592077202927999e-08, "j": 8.214327184215999e-08}], [11, {"id": 11, "name": "1030", "a": 0.0007354823999999, "iz": 4.042023374001599e-07, "iy": 5.1529450489279995e-08, "j": 2.2786589394471995e-07}], [12, {"id": 12, "name": "1030-S", "a": 0.0007322566, "iz": 5.252840591072e-08, "iy": 3.995405454334399e-07, "j": 2.2603447567207993e-07}], [13, {"id": 13, "name": "1515-Black", "a": 0.0007432243199999, "iz": 1.0580602838751997e-07, "iy": 1.0580602838751997e-07, "j": 1.0580602838751997e-07}], [14, {"id": 14, "name": "1515-Lite-Black", "a": 0.00057806336, "iz": 7.712768316368e-08, "iy": 7.712768316368e-08, "j": 7.712768316368e-08}], [15, {"id": 15, "name": "1515-Lite-Yellow", "a": 0.00057806336, "iz": 7.700281373599999e-08, "iy": 7.700281373599999e-08, "j": 7.700281373599999e-08}], [16, {"id": 16, "name": "1515-LS", "a": 0.00056903112, "iz": 7.995805685775998e-08, "iy": 7.995805685775998e-08, "j": 7.995805685775998e-08}], [17, {"id": 17, "name": "1515-LS-Black", "a": 0.00056903112, "iz": 7.995805685775998e-08, "iy": 7.995805685775998e-08, "j": 7.995805685775998e-08}], [18, {"id": 18, "name": "1515-S", "a": 0.0007341920799999, "iz": 1.0951048807536e-07, "iy": 1.0951048807536e-07, "j": 1.0951048807536e-07}], [19, {"id": 19, "name": "1515-S-Black", "a": 0.0007341920799999, "iz": 1.0951048807536e-07, "iy": 1.0951048807536e-07, "j": 1.0951048807536e-07}], [20, {"id": 20, "name": "1515-UL", "a": 0.00050774092, "iz": 7.375620861631998e-08, "iy": 7.375620861631998e-08, "j": 7.375620861631998e-08}], [21, {"id": 21, "name": "1515-ULS", "a": 0.00051759960996, "iz": 7.346484661839997e-08, "iy": 7.346484661839997e-08, "j": 7.346484661839997e-08}], [22, {"id": 22, "name": "1515-ULS-Black", "a": 0.00051759960996, "iz": 7.346484661839997e-08, "iy": 7.346484661839997e-08, "j": 7.346484661839997e-08}], [23, {"id": 23, "name": "1515-YELLOW", "a": 0.0007432243199999, "iz": 1.0580602838751997e-07, "iy": 1.0580602838751997e-07, "j": 1.0580602838751997e-07}], [24, {"id": 24, "name": "1530", "a": 0.00133999732, "iz": 7.509647380675198e-07, "iy": 2.0079003970944e-07, "j": 4.758773888884799e-07}], [25, {"id": 25, "name": "1530-Lite", "a": 0.0011109655199999, "iz": 5.763556550283199e-07, "iy": 1.637870659736e-07, "j": 3.7007136050095994e-07}], [26, {"id": 26, "name": "1530-LS", "a": 0.00108515912, "iz": 5.777708418753598e-07, "iy": 1.6903158193615997e-07, "j": 3.734012119057599e-07}], [27, {"id": 27, "name": "1530-S", "a": 0.00131354576, "iz": 7.545027051851198e-07, "iy": 2.0632591766991998e-07, "j": 4.804143114275199e-07}], [28, {"id": 28, "name": "1530-S-Black", "a": 0.00131354576, "iz": 7.545027051851198e-07, "iy": 2.0632591766991998e-07, "j": 4.804143114275199e-07}], [29, {"id": 29, "name": "1530-ULS", "a": 0.0008954820799999, "iz": 5.350654976087999e-07, "iy": 1.3806396387151996e-07, "j": 3.3656473074015994e-07}], [30, {"id": 30, "name": "20-2020", "a": 0.0001591, "iz": 6.826e-09, "iy": 6.826e-09, "j": 6.826e-09}], [31, {"id": 31, "name": "20-2040", "a": 0.000275, "iz": 4.5357000000000014e-08, "iy": 1.2133e-08, "j": 2.8745000000000007e-08}], [32, {"id": 32, "name": "2020", "a": 0.00079225648, "iz": 2.2930189236304e-07, "iy": 2.2930189236304e-07, "j": 2.2930189236304e-07}], [33, {"id": 33, "name": "2020-S", "a": 0.00078451456, "iz": 2.3080032549520001e-07, "iy": 2.3080032549520001e-07, "j": 2.3080032549520001e-07}], [34, {"id": 34, "name": "25-2525", "a": 0.0002746, "iz": 1.7726e-08, "iy": 1.7726e-08, "j": 1.7726e-08}], [35, {"id": 35, "name": "25-2525-Black", "a": 0.0002746, "iz": 1.7726e-08, "iy": 1.7726e-08, "j": 1.7726e-08}], [36, {"id": 36, "name": "25-2550", "a": 0.0004857, "iz": 1.21714e-07, "iy": 3.1966e-08, "j": 7.684e-08}], [37, {"id": 37, "name": "25-2550-Black", "a": 0.0004857, "iz": 1.21714e-07, "iy": 3.1966e-08, "j": 7.684e-08}], [38, {"id": 38, "name": "25-2576", "a": 0.0006889, "iz": 3.728520000000001e-07, "iy": 4.592100000000001e-08, "j": 2.0938650000000006e-07}], [39, {"id": 39, "name": "25-5050", "a": 0.0007487, "iz": 2.1123100000000002e-07, "iy": 2.1123100000000002e-07, "j": 2.1123100000000002e-07}], [40, {"id": 40, "name": "30-3030", "a": 0.0003144, "iz": 2.7221000000000006e-08, "iy": 2.7221000000000006e-08, "j": 2.7221000000000006e-08}], [41, {"id": 41, "name": "30-3060", "a": 0.00058266, "iz": 1.96933e-07, "iy": 5.4332000000000006e-08, "j": 1.256325e-07}], [42, {"id": 42, "name": "3030", "a": 0.00207225392, "iz": 1.4207227250004798e-06, "iy": 1.4207227250004798e-06, "j": 1.4207227250004798e-06}], [43, {"id": 43, "name": "3030-Lite", "a": 0.00178257708, "iz": 1.1221183002750398e-06, "iy": 1.1221183002750398e-06, "j": 1.1221183002750398e-06}], [44, {"id": 44, "name": "3030-Lite-Black", "a": 0.00178257708, "iz": 1.1221183002750398e-06, "iy": 1.1221183002750398e-06, "j": 1.1221183002750398e-06}], [45, {"id": 45, "name": "3030-LS", "a": 0.0017154804399999, "iz": 1.1180392323041595e-06, "iy": 1.1180392323041595e-06, "j": 1.1180392323041595e-06}], [46, {"id": 46, "name": "3030-S", "a": 0.00200580244, "iz": 1.39420878318976e-06, "iy": 1.39420878318976e-06, "j": 1.39420878318976e-06}], [47, {"id": 47, "name": "40-4040", "a": 0.0008742, "iz": 1.3787e-07, "iy": 1.3787e-07, "j": 1.3787e-07}], [48, {"id": 48, "name": "40-4040-Black", "a": 0.0008742, "iz": 1.377e-07, "iy": 1.377e-07, "j": 1.377e-07}], [49, {"id": 49, "name": "40-4040-Lite", "a": 0.0006608, "iz": 9.398300000000003e-08, "iy": 9.398300000000003e-08, "j": 9.398300000000003e-08}], [50, {"id": 50, "name": "40-4040-Lite-Black", "a": 0.0006608, "iz": 9.398300000000003e-08, "iy": 9.398300000000003e-08, "j": 9.398300000000003e-08}], [51, {"id": 51, "name": "40-4040-UL", "a": 0.000575, "iz": 8.7059e-08, "iy": 8.7059e-08, "j": 8.7059e-08}], [52, {"id": 52, "name": "40-4080", "a": 0.0015332, "iz": 9.76617e-07, "iy": 2.52917e-07, "j": 6.14767e-07}], [53, {"id": 53, "name": "40-4080-Lite", "a": 0.0012532, "iz": 7.18926e-07, "iy": 1.87791e-07, "j": 4.533585e-07}], [54, {"id": 54, "name": "40-4080-Lite-Black", "a": 0.0012532, "iz": 7.18926e-07, "iy": 1.87791e-07, "j": 4.533585e-07}], [55, {"id": 55, "name": "40-8080", "a": 0.0023573, "iz": 1.7163409999999998e-06, "iy": 1.7163409999999998e-06, "j": 1.7163409999999998e-06}], [56, {"id": 56, "name": "45-4545", "a": 0.0007587, "iz": 1.39604e-07, "iy": 1.39604e-07, "j": 1.39604e-07}], [57, {"id": 57, "name": "45-4545-Lite", "a": 0.0005167, "iz": 9.2029e-08, "iy": 9.2029e-08, "j": 9.2029e-08}], [58, {"id": 58, "name": "45-4590", "a": 0.0012615, "iz": 1.042072e-06, "iy": 2.52637e-07, "j": 6.473545000000001e-07}], [59, {"id": 59, "name": "1010-S-Black-FB", "a": 0.0002819349199999, "iz": 1.927151500528e-08, "iy": 1.927151500528e-08, "j": 1.927151500528e-08}], [60, {"id": 60, "name": "1020-S-Black", "a": 0.00050709576, "iz": 1.2836577165504e-07, "iy": 3.592077202927999e-08, "j": 8.214327184215999e-08}], [61, {"id": 61, "name": "1504-LS", "a": 0.0005258054, "iz": 7.475516403775998e-08, "iy": 7.321510776303998e-08, "j": 7.398513590039999e-08}], [62, {"id": 62, "name": "1545", "a": 0.0019367703199999, "iz": 2.3695638827982394e-06, "iy": 2.9539944274832e-07, "j": 1.3324816627732798e-06}], [63, {"id": 63, "name": "1545-LS", "a": 0.00160773872, "iz": 1.86188641299392e-06, "iy": 2.6018626414256e-07, "j": 1.06103633856824e-06}], [64, {"id": 64, "name": "20-2020-Black-FB", "a": 0.0001591, "iz": 6.826e-09, "iy": 6.826e-09, "j": 6.826e-09}], [65, {"id": 65, "name": "20-4040", "a": 0.0004227, "iz": 7.821900000000002e-08, "iy": 7.821900000000002e-08, "j": 7.821900000000002e-08}], [66, {"id": 66, "name": "2020-S-Black-FB", "a": 0.00078451456, "iz": 2.3080032549520001e-07, "iy": 2.3080032549520001e-07, "j": 2.3080032549520001e-07}], [67, {"id": 67, "name": "25-2503", "a": 0.0002892, "iz": 1.775e-08, "iy": 1.956e-08, "j": 1.8655e-08}], [68, {"id": 68, "name": "25-2503-Black", "a": 0.0002892, "iz": 0.0, "iy": 0.0, "j": 0.0}], [69, {"id": 69, "name": "25-5050-Black", "a": 0.0007487, "iz": 2.1123100000000002e-07, "iy": 2.1123100000000002e-07, "j": 2.1123100000000002e-07}], [70, {"id": 70, "name": "30-3030-Black", "a": 0.0003144, "iz": 2.7221000000000006e-08, "iy": 2.7221000000000006e-08, "j": 2.7221000000000006e-08}], [71, {"id": 71, "name": "3030-Black", "a": 0.00207225392, "iz": 1.4207227250004798e-06, "iy": 1.4207227250004798e-06, "j": 1.4207227250004798e-06}], [72, {"id": 72, "name": "3060", "a": 0.00384708908, "iz": 0.0, "iy": 0.0, "j": 0.0}], [73, {"id": 73, "name": "40-4003-Black", "a": 0.0006268, "iz": 8.948e-08, "iy": 8.948e-08, "j": 8.948e-08}], [74, {"id": 74, "name": "40-4040-Black-FB", "a": 0.0008742, "iz": 1.3787e-07, "iy": 1.3787e-07, "j": 1.3787e-07}], [75, {"id": 75, "name": "40-4040-UL-Black", "a": 0.000575, "iz": 8.7059e-08, "iy": 8.7059e-08, "j": 8.7059e-08}], [76, {"id": 76, "name": "40-4080-Black", "a": 0.0015332, "iz": 9.76617e-07, "iy": 2.52917e-07, "j": 6.14767e-07}], [77, {"id": 77, "name": "40-4080-UL", "a": 0.0009792, "iz": 6.31358e-07, "iy": 1.54754e-07, "j": 3.93056e-07}], [78, {"id": 78, "name": "40-8080-Black", "a": 0.0023573, "iz": 1.7163409999999998e-06, "iy": 1.7163409999999998e-06, "j": 1.7163409999999998e-06}], [79, {"id": 79, "name": "40-8080-Lite", "a": 0.0, "iz": 0.0, "iy": 0.0, "j": 0.0}], [80, {"id": 80, "name": "45-9090", "a": 0.0020014, "iz": 1.784968e-06, "iy": 1.794968e-06, "j": 1.789968e-06}]], "elements": [[7, {"id": 7, "type": "frame", "nodeI": 3, "nodeJ": 8, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [8, {"id": 8, "type": "frame", "nodeI": 2, "nodeJ": 8, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [9, {"id": 9, "type": "frame", "nodeI": 1, "nodeJ": 9, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [10, {"id": 10, "type": "frame", "nodeI": 4, "nodeJ": 9, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [14, {"id": 14, "type": "frame", "nodeI": 9, "nodeJ": 12, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [17, {"id": 17, "type": "frame", "nodeI": 14, "nodeJ": 19, "materialId": 4, "sectionId": 5, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [18, {"id": 18, "type": "frame", "nodeI": 13, "nodeJ": 17, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [19, {"id": 19, "type": "frame", "nodeI": 13, "nodeJ": 16, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [20, {"id": 20, "type": "frame", "nodeI": 18, "nodeJ": 14, "materialId": 4, "sectionId": 5, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [21, {"id": 21, "type": "frame", "nodeI": 4, "nodeJ": 15, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [22, {"id": 22, "type": "frame", "nodeI": 1, "nodeJ": 13, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [23, {"id": 23, "type": "frame", "nodeI": 12, "nodeJ": 14, "materialId": 4, "sectionId": 2, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [24, {"id": 24, "type": "frame", "nodeI": 13, "nodeJ": 3, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [25, {"id": 25, "type": "frame", "nodeI": 15, "nodeJ": 2, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [26, {"id": 26, "type": "frame", "nodeI": 14, "nodeJ": 8, "materialId": 4, "sectionId": 2, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [27, {"id": 27, "type": "frame", "nodeI": 17, "nodeJ": 19, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}], [29, {"id": 29, "type": "frame", "nodeI": 16, "nodeJ": 18, "materialId": 1, "sectionId": 3, "releaseI": {"my": false, "mz": false, "t": false}, "releaseJ": {"my": false, "mz": false, "t": false}}]], "supports": [[1, {"id": 1, "nodeId": 3, "type": "custom3d", "dofRestraints": {"tx": true, "ty": true, "tz": true, "rx": true, "ry": false, "rz": true}, "dofFrame": "global"}], [2, {"id": 2, "nodeId": 2, "type": "custom3d", "dofRestraints": {"tx": false, "ty": true, "tz": true, "rx": true, "ry": false, "rz": true}, "dofFrame": "global"}], [4, {"id": 4, "nodeId": 12, "type": "custom3d", "dofRestraints": {"tx": true, "ty": true, "tz": false, "rx": true, "ry": false, "rz": true}, "dofFrame": "global"}]], "loads": [{"type": "nodal3d", "data": {"id": 5, "nodeId": 12, "fx": 0, "fy": 0, "fz": 6.67233242, "mx": 0, "my": 0, "mz": 0, "caseId": 2}}, {"type": "nodal3d", "data": {"id": 7, "nodeId": 19, "fx": 0.2, "fy": 0, "fz": 0, "mx": 0, "my": 0, "mz": 0, "caseId": 2}}, {"type": "nodal3d", "data": {"id": 10, "nodeId": 17, "fx": -0.2, "fy": 0, "fz": 0, "mx": 0, "my": 0, "mz": 0, "caseId": 1}}], "loadCases": [{"type": "D", "id": 1, "name": "Dead Load"}, {"type": "L", "id": 2, "name": "Live Load"}, {"type": "W", "id": 3, "name": "Wind"}, {"type": "E", "id": 4, "name": "Earthquake"}], "combinations": [{"id": 1, "name": "1.2D + 1.6L", "factors": [{"caseId": 1, "factor": 1.2}, {"caseId": 2, "factor": 1.6}]}, {"id": 2, "name": "1.4D", "factors": [{"caseId": 1, "factor": 1.4}]}, {"id": 3, "name": "1.2D + L + 1.6W", "factors": [{"caseId": 1, "factor": 1.2}, {"caseId": 2, "factor": 1}, {"caseId": 3, "factor": 1.6}]}, {"id": 4, "name": "1.2D + L + E", "factors": [{"caseId": 1, "factor": 1.2}, {"caseId": 2, "factor": 1}, {"caseId": 4, "factor": 1}]}], "plates": [], "quads": [], "constraints": [], "connectors": [], "nextId": {"node": 24, "material": 7, "section": 81, "element": 30, "support": 5, "load": 11, "loadCase": 6, "combination": 5, "plate": 1, "quad": 1, "group": 1, "connector": 1, "footing": 1, "soilProfile": 1}, "localAxisConvention": "zUpStrongAxis", "codeSettings": {"version": 1, "jurisdiction": {"name": "", "basis": "unstated"}, "concreteEdition": "2025", "loadEdition": "2025", "windEdition": "2025", "concrete": {"maxAggregateSizeMm": null, "shotcrete": false}}, "detailing": {"version": 2, "assemblies": []}, "exports": [], "manualEdits": [], "footings": [], "geotechnical": {"version": 1, "profiles": [], "defaultProfileId": null}, "footingMatPreferences": {"bottomMatDiameterXmm": 16, "bottomMatDiameterYmm": 16, "bottomMatSpacingPolicy": "AUTO_CODE_COMPLIANT", "bottomMatLayerOrder": "AUTO"}}, "appMode": "basico", "analysisMode": "3d", "axisConvention3D": "rightHand", "viewportPresentation3D": "native3d", "includeSelfWeight": true}')
+MODEL_WARNINGS = ["Section '2020' is missing J; using Iy + Iz as an approximate torsional constant."]
+YIELD_FACTOR_OF_SAFETY = 1.0
+BUCKLING_FACTOR_OF_SAFETY = 1.0
+
+
+def records(key):
+    return [record[1] for record in DED_DATA["snapshot"].get(key, [])]
+
+
+def get_by_id(key, idn):
+    for record_id, record in DED_DATA["snapshot"][key]:
+        if record_id == idn:
+            return record
+    raise ValueError(f"{idn} is not a valid id in {key}.")
+
+
+def support_restraints(support, dimension):
+    if dimension == 2:
+        restraints = {
+            "fixed": (1, 1, 1),
+            "pinned": (1, 1, 0),
+            "rollerX": (0, 1, 0),
+            "rollerZ": (1, 0, 0),
+        }
+        if support["type"] not in restraints:
+            raise ValueError(f"2D support type {support['type']!r} is not supported.")
+        return restraints[support["type"]]
+
+    if support.get("dofFrame", "global") != "global":
+        raise ValueError(f"Support {support['id']} restraints are not in the global frame.")
+    if "dofRestraints" in support:
+        dofs = support["dofRestraints"]
+        return tuple(int(dofs[key]) for key in ("tx", "ty", "tz", "rx", "ry", "rz"))
+    restraints = {
+        "fixed": (1, 1, 1, 1, 1, 1),
+        "fixed3d": (1, 1, 1, 1, 1, 1),
+        "pinned": (1, 1, 1, 0, 0, 1),
+        "pinned3d": (1, 1, 1, 0, 0, 0),
+        "custom3d": (1, 1, 1, 1, 1, 1),
+        "rollerXZ": (0, 1, 0, 0, 0, 0),
+        "rollerXY": (0, 0, 1, 0, 0, 0),
+        "rollerYZ": (1, 0, 0, 0, 0, 0),
+    }
+    if support["type"] not in restraints:
+        raise ValueError(f"3D support type {support['type']!r} is not supported.")
+    return restraints[support["type"]]
+
+
+def local_axes(node_i, node_j):
+    start = get_by_id("nodes", node_i)
+    end = get_by_id("nodes", node_j)
+    vector = [end[key] - start[key] for key in ("x", "y", "z")]
+    length = math.sqrt(sum(value * value for value in vector))
+    if length == 0:
+        raise ValueError(f"Element from node {node_i} to {node_j} has zero length.")
+    local_x = [value / length for value in vector]
+    vec_xz = [0, 0, 1] if abs(local_x[2]) < 0.95 else [0, 1, 0]
+    cross = (
+        vec_xz[1] * local_x[2] - vec_xz[2] * local_x[1],
+        vec_xz[2] * local_x[0] - vec_xz[0] * local_x[2],
+        vec_xz[0] * local_x[1] - vec_xz[1] * local_x[0],
+    )
+    norm = math.sqrt(sum(value * value for value in cross))
+    local_y = [value / norm for value in cross]
+    local_z = [
+        local_x[1] * local_y[2] - local_x[2] * local_y[1],
+        local_x[2] * local_y[0] - local_x[0] * local_y[2],
+        local_x[0] * local_y[1] - local_x[1] * local_y[0],
+    ]
+    return length, vec_xz, local_x, local_y, local_z
+
+
+def add_model(load_factors):
+    dimension = 2 if DED_DATA["analysisMode"] == "2d" else 3
+    dofs = 3 if dimension == 2 else 6
+    snapshot = DED_DATA["snapshot"]
+    ops.wipe()
+    ops.model("basic", "-ndm", dimension, "-ndf", dofs)
+
+    for node in records("nodes"):
+        if dimension == 2:
+            ops.node(node["id"], node["x"], node["y"])
+        else:
+            ops.node(node["id"], node["x"], node["y"], node["z"])
+
+    for support in records("supports"):
+        restraints = support_restraints(support, dimension)
+        ops.fix(support["nodeId"], *restraints)
+
+    for material in records("materials"):
+        ops.uniaxialMaterial("Elastic", material["id"], material["e"] * 1000)
+
+    ops.timeSeries("Linear", 1)
+    ops.pattern("Plain", 1, 1)
+
+    dead_cases = [
+        case["id"]
+        for case in snapshot.get("loadCases", [])
+        if case.get("type") == "D"
+    ]
+    self_weight_factor = (
+        sum(load_factors.get(case_id, 0) for case_id in dead_cases)
+        if dead_cases
+        else 1
+    )
+
+    for element_id, element in snapshot.get("elements", []):
+        material = get_by_id("materials", element["materialId"])
+        section = get_by_id("sections", element["sectionId"])
+        elastic_modulus = material["e"] * 1000
+        area = section["a"]
+
+        if element["type"] == "truss":
+            ops.element(
+                "truss", element_id, element["nodeI"], element["nodeJ"],
+                area, material["id"],
+            )
+        elif dimension == 2:
+            ops.geomTransf("PDelta", element_id)
+            ops.element(
+                "elasticBeamColumn", element_id, element["nodeI"], element["nodeJ"],
+                area, elastic_modulus, section.get("iy", section["iz"]), element_id,
+            )
+        else:
+            _, vec_xz, _, _, _ = local_axes(element["nodeI"], element["nodeJ"])
+            shear_modulus = elastic_modulus / (2 * (1 + material["nu"]))
+            ops.geomTransf("PDelta", element_id, *vec_xz)
+            ops.element(
+                "elasticBeamColumn", element_id, element["nodeI"], element["nodeJ"],
+                area, elastic_modulus, shear_modulus,
+                section.get("j", section["iy"] + section["iz"]),
+                section.get("iy", section["iz"]), section["iz"], element_id,
+            )
+
+        if DED_DATA.get("includeSelfWeight") and self_weight_factor:
+            weight = material["rho"] * area * self_weight_factor
+            if element["type"] == "truss":
+                add_truss_weight(element, weight, dimension)
+            elif dimension == 2:
+                add_frame_weight_2d(element, weight)
+            else:
+                add_frame_weight_3d(element, weight)
+
+    for load in snapshot.get("loads", []):
+        data = load["data"]
+        factor = load_factors.get(data.get("caseId"), 0)
+        if not factor:
+            continue
+        if dimension == 2:
+            ops.load(
+                data["nodeId"], data.get("fx", 0) * factor,
+                data.get("fz", 0) * factor, data.get("my", 0) * factor,
+            )
+        else:
+            ops.load(
+                data["nodeId"], data.get("fx", 0) * factor,
+                data.get("fy", 0) * factor, data.get("fz", 0) * factor,
+                data.get("mx", 0) * factor, data.get("my", 0) * factor,
+                data.get("mz", 0) * factor,
+            )
+
+
+def add_truss_weight(element, weight, dimension):
+    start = get_by_id("nodes", element["nodeI"])
+    end = get_by_id("nodes", element["nodeJ"])
+    keys = ("x", "y") if dimension == 2 else ("x", "y", "z")
+    length = math.sqrt(sum((end[key] - start[key]) ** 2 for key in keys))
+    vertical_index = 1 if dimension == 2 else 2
+    load = [0] * dimension
+    load[vertical_index] = -weight * length / 2
+    ops.load(element["nodeI"], *load, *([0] if dimension == 2 else [0, 0, 0]))
+    ops.load(element["nodeJ"], *load, *([0] if dimension == 2 else [0, 0, 0]))
+
+
+def add_frame_weight_2d(element, weight):
+    start = get_by_id("nodes", element["nodeI"])
+    end = get_by_id("nodes", element["nodeJ"])
+    dx = end["x"] - start["x"]
+    dy = end["y"] - start["y"]
+    length = math.sqrt(dx * dx + dy * dy)
+    if length == 0:
+        raise ValueError(f"Element {element['id']} has zero length.")
+    local_x = (dx / length, dy / length)
+    local_y = (-local_x[1], local_x[0])
+    wx = -weight * local_x[1]
+    wy = -weight * local_y[1]
+    ops.eleLoad(
+        "-ele", element["id"], "-type", "-beamUniform", wy, wx,
+    )
+
+
+def add_frame_weight_3d(element, weight):
+    length, _, local_x, local_y, local_z = local_axes(element["nodeI"], element["nodeJ"])
+    wy = -weight * local_y[2]
+    wz = -weight * local_z[2]
+    wx = -weight * local_x[2]
+    ops.eleLoad(
+        "-ele", element["id"], "-type", "-beamUniform", wy, wz, wx,
+    )
+
+
+def analyze(load_name, load_factors):
+    add_model(load_factors)
+    ops.constraints("Plain")
+    ops.numberer("RCM")
+    ops.system("BandGeneral")
+    ops.test("NormDispIncr", 1e-8, 10)
+    ops.algorithm("Linear")
+    ops.integrator("LoadControl", 1)
+    ops.analysis("Static")
+    status = ops.analyze(1)
+    if status != 0:
+        raise RuntimeError(f"OpenSees analysis failed for {load_name!r}: {status}")
+
+    ops.reactions()
+    nodes = records("nodes")
+    elements = records("elements")
+    return {
+        "load_state": load_name,
+        "load_factors": load_factors,
+        "analysis_order": "PDelta",
+        "displacements": {
+            str(node["id"]): ops.nodeDisp(node["id"])
+            for node in nodes
+        },
+        "reactions": {
+            str(node["id"]): ops.nodeReaction(node["id"])
+            for node in nodes
+        },
+        "element_forces": {
+            str(element["id"]): ops.eleForce(element["id"])
+            for element in elements
+        },
+    }
+
+
+def check_member_strength(element, forces):
+    section = get_by_id("sections", element["sectionId"])
+    material = get_by_id("materials", element["materialId"])
+    dimension = 2 if DED_DATA["analysisMode"] == "2d" else 3
+    start = get_by_id("nodes", element["nodeI"])
+    end = get_by_id("nodes", element["nodeJ"])
+    axes = ("x", "y") if dimension == 2 else ("x", "y", "z")
+    length = math.sqrt(sum((end[key] - start[key]) ** 2 for key in axes))
+    if length == 0:
+        raise ValueError(f"Element {element['id']} has zero length.")
+
+    if element["type"] == "truss":
+        axial = max(abs(forces[0]), abs(forces[-1]))
+        compression = max(0, (forces[0] - forces[-1]) / 2)
+        moments = []
+    elif dimension == 2:
+        axial = max(abs(forces[0]), abs(forces[3]))
+        compression = max(0, (forces[0] - forces[3]) / 2)
+        moments = [(max(abs(forces[2]), abs(forces[5])), section.get("iz"), section.get("h"))]
+    else:
+        axial = max(abs(forces[0]), abs(forces[6]))
+        compression = max(0, (forces[0] - forces[6]) / 2)
+        moments = [
+            (max(abs(forces[4]), abs(forces[10])), section.get("iy"), section.get("h")),
+            (max(abs(forces[5]), abs(forces[11])), section.get("iz"), section.get("b")),
+        ]
+
+    axial_stress_mpa = axial / section["a"] / 1000
+    fy = material.get("fy")
+    axial_yield_fos = fy / axial_stress_mpa if fy and fy > 0 and axial_stress_mpa > 0 else None
+    axial_yield_status = "NOT CHECKED"
+    yield_fos = None
+    yield_status = "NOT CHECKED"
+    yield_basis = "axial_and_bending"
+    combined_yield_checked = False
+    stress_mpa = axial_stress_mpa
+    if fy is not None and fy > 0:
+        axial_yield_status = (
+            "PASS" if axial_stress_mpa == 0 or axial_yield_fos >= YIELD_FACTOR_OF_SAFETY
+            else "FAIL"
+        )
+        dimensions_available = element["type"] == "truss" or all(
+            moment == 0 or (
+                inertia is not None and inertia > 0 and depth is not None and depth > 0
+            )
+            for moment, inertia, depth in moments
+        )
+        if dimensions_available:
+            combined_yield_checked = True
+            for moment, inertia, depth in moments:
+                if moment:
+                    stress_mpa += moment * (depth / 2) / inertia / 1000
+            yield_fos = fy / stress_mpa if stress_mpa > 0 else None
+            yield_status = (
+                "PASS" if stress_mpa == 0 or yield_fos >= YIELD_FACTOR_OF_SAFETY
+                else "FAIL"
+            )
+        else:
+            yield_basis = "axial_only_missing_section_dimensions"
+            if axial_yield_status == "FAIL":
+                yield_status = "FAIL"
+
+    inertia_values = [
+        value for value in (section.get("iy"), section.get("iz"))
+        if value is not None and value > 0
+    ]
+    if dimension == 2:
+        inertia = section.get("iz", section.get("iy"))
+        inertia_values = [inertia] if inertia is not None and inertia > 0 else []
+    buckling_fos = None
+    buckling_capacity = None
+    if compression > 0 and inertia_values and all(value > 0 for value in inertia_values):
+        elastic_modulus = material["e"] * 1000
+        buckling_capacity = math.pi ** 2 * elastic_modulus * min(inertia_values) / length ** 2
+        buckling_fos = buckling_capacity / compression
+        buckling_status = (
+            "PASS" if buckling_fos >= BUCKLING_FACTOR_OF_SAFETY else "FAIL"
+        )
+    else:
+        buckling_status = "PASS" if compression == 0 else "NOT CHECKED"
+
+    return {
+        "element_id": element["id"],
+        "element_type": element["type"],
+        "axial_demand_kN": axial,
+        "compression_demand_kN": compression,
+        "axial_stress_mpa": axial_stress_mpa,
+        "maximum_normal_stress_mpa": stress_mpa if combined_yield_checked else None,
+        "yield_strength_mpa": fy,
+        "axial_yield_factor_of_safety": axial_yield_fos,
+        "required_axial_yield_factor_of_safety": YIELD_FACTOR_OF_SAFETY,
+        "axial_yield_status": axial_yield_status,
+        "yield_factor_of_safety": yield_fos,
+        "required_yield_factor_of_safety": YIELD_FACTOR_OF_SAFETY,
+        "yield_check_basis": yield_basis,
+        "yield_status": yield_status,
+        "euler_buckling_capacity_kN": buckling_capacity,
+        "buckling_factor_of_safety": buckling_fos,
+        "required_buckling_factor_of_safety": BUCKLING_FACTOR_OF_SAFETY,
+        "buckling_check_basis": "ideal_euler_column_pinned_pinned",
+        "buckling_status": buckling_status,
+    }
+
+
+def add_design_checks(result):
+    elements = records("elements")
+    checks = [
+        check_member_strength(element, result["element_forces"][str(element["id"])])
+        for element in elements
+    ]
+    def combined_status(statuses):
+        if "FAIL" in statuses:
+            return "FAIL"
+        if "NOT CHECKED" in statuses:
+            return "NOT CHECKED"
+        return "PASS"
+
+    result["member_checks"] = checks
+    result["axial_yield_status"] = combined_status(
+        [check["axial_yield_status"] for check in checks]
+    )
+    result["yield_status"] = combined_status(
+        [check["yield_status"] for check in checks]
+    )
+    result["buckling_status"] = combined_status(
+        [check["buckling_status"] for check in checks]
+    )
+    result["configuration_status"] = combined_status(
+        [result["yield_status"], result["buckling_status"]]
+    )
+    return result
+
+
+def main():
+    snapshot = DED_DATA["snapshot"]
+    cases = snapshot.get("loadCases", [])
+    states = []
+    for case in cases:
+        states.append((case["name"], {case["id"]: 1}))
+    for combination in snapshot.get("combinations", []):
+        factors = {
+            item["caseId"]: item["factor"]
+            for item in combination.get("factors", [])
+        }
+        states.append((combination["name"], factors))
+    if not states:
+        factors = {
+            load["data"]["caseId"]: 1
+            for load in snapshot.get("loads", [])
+        }
+        states.append(("All loads", factors))
+
+    results = [
+        add_design_checks(analyze(name, factors))
+        for name, factors in states
+    ]
+    output = Path(__file__).with_suffix(".results.json")
+    output.write_text(
+        json.dumps(
+            {
+                "modeling_warnings": MODEL_WARNINGS,
+                "design_basis": {
+                    "yield_factor_of_safety": YIELD_FACTOR_OF_SAFETY,
+                    "buckling_factor_of_safety": BUCKLING_FACTOR_OF_SAFETY,
+                    "p_delta": True,
+                    "buckling_method": "ideal Euler pinned-pinned column; no local buckling or code reductions",
+                },
+                "results": results,
+            },
+            indent=2,
+            allow_nan=False,
+        ),
+        encoding="utf-8",
+    )
+    print(f"Results written to {output}")
+
+
+if __name__ == "__main__":
+    main()
